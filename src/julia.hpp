@@ -5,5 +5,5 @@
 
 int sampleJuliaIteration(ComplexDouble_t z, ComplexDouble_t c);
 
-std::vector<float> getJuliaLuminanceMap(ComplexDouble_t c, size_t imgWidth, size_t imgHeight,
-                                        std::pair<double, double> xRange, std::pair<double, double> yRange);
+std::vector<float> getJuliaLuminanceMap(ComplexDouble_t c, XYPairDouble_t imageSize,
+                                        XYPairDouble_t minRange, XYPairDouble_t maxRange);

@@ -10,9 +10,7 @@
 #include "rgbUtils.hpp"
 
 using namespace std::chrono;
-std::vector<uint8_t> getJuliaBitmapRGBA(ComplexDouble_t c, size_t imgWidth, size_t imgHeight,
-                                        std::pair<double, double> renderRangeX, std::pair<double, double> renderRangeY);
-
+std::vector<uint8_t> getJuliaBitmapRGBA(ComplexDouble_t c, XYPairDouble_t imgSize, XYPairDouble_t minRange, XYPairDouble_t maxRange);
 void centerAndScaleSprite(sf::Sprite &sprite, sf::Vector2u windowSize);
 
 int main()
@@ -27,11 +25,11 @@ int main()
     double zoomLevel = 1.0;
     XYPairDouble_t panOffset = {0.0, 0.0};
 
-    auto calculateRenderXYRanges = [&]() -> std::pair<std::pair<double, double>, std::pair<double, double>>
+    auto calculateRenderXYRanges = [&]() -> std::pair<XYPairDouble_t, XYPairDouble_t>
     {
-        std::pair<double, double> rangeX = {-1.0 * zoomLevel + panOffset.x, 1.0 * zoomLevel + panOffset.x};
-        std::pair<double, double> rangeY = {-1.0 * zoomLevel + panOffset.y, 1.0 * zoomLevel + panOffset.y};
-        return {rangeX, rangeY};
+        return {
+            {-1.0 * zoomLevel + panOffset.x, -1.0 * zoomLevel + panOffset.y},
+            {1.0 * zoomLevel + panOffset.x, 1.0 * zoomLevel + panOffset.y}};
     };
 
     sf::Image image;
@@ -73,11 +71,10 @@ int main()
                     double delta_x = (double)delta.x / windowSize.x;
                     double delta_y = (double)delta.y / windowSize.y;
 
-                    auto xRange = calculateRenderXYRanges().first;
-                    auto yRange = calculateRenderXYRanges().second;
+                    auto [rangeMin, rangeMax] = calculateRenderXYRanges();
 
-                    panOffset.x += -1 * (delta_x) * (xRange.second - xRange.first);
-                    panOffset.y += (delta_y) * (yRange.second - yRange.first);
+                    panOffset.x += -1 * (delta_x) * (rangeMax.x - rangeMin.x);
+                    panOffset.y += (delta_y) * (rangeMax.y - rangeMin.y);
                     requiresRedraw = true;
                 }
                 lastMousePos = sf::Vector2i(event.mouseMove.x, event.mouseMove.y);
@@ -112,10 +109,10 @@ int main()
         {
             window.clear();
 
-            auto renderRanges = calculateRenderXYRanges();
-            std::cout << "Range: " << renderRanges.first.second - renderRanges.first.first << '\n';
+            auto [rangeMin, rangeMax] = calculateRenderXYRanges();
+            std::cout << "Range of x: " << rangeMax.x - rangeMin.x << '\n';
 
-            std::vector<uint8_t> imageBitmap = getJuliaBitmapRGBA(c, imgWidth, imgHeight, renderRanges.first, renderRanges.second);
+            std::vector<uint8_t> imageBitmap = getJuliaBitmapRGBA(c, {imgWidth, imgHeight}, rangeMin, rangeMax);
 
             image.create(imgWidth, imgHeight, imageBitmap.data());
             texture.loadFromImage(image);
@@ -140,19 +137,18 @@ void centerAndScaleSprite(sf::Sprite &sprite, sf::Vector2u windowSize)
     // sprite.setPosition((windowSize.x / 2.f) - localBounds.width, 0);
 }
 
-std::vector<uint8_t> getJuliaBitmapRGBA(ComplexDouble_t c, size_t imgWidth, size_t imgHeight,
-                                        std::pair<double, double> renderRangeX, std::pair<double, double> renderRangeY)
+std::vector<uint8_t> getJuliaBitmapRGBA(ComplexDouble_t c, XYPairDouble_t imgSize, XYPairDouble_t minRange, XYPairDouble_t maxRange)
 {
     constexpr size_t bytesPerPixel = 4;
 
     auto t1Start = high_resolution_clock::now();
-    std::vector<float> luminanceMap = getJuliaLuminanceMap(c, imgWidth, imgHeight, renderRangeX, renderRangeY);
+    std::vector<float> luminanceMap = getJuliaLuminanceMap(c, imgSize, minRange, maxRange);
     float *luminanceMapData = luminanceMap.data();
     auto t1Diff = duration_cast<milliseconds>(high_resolution_clock::now() - t1Start);
     std::cout << "Calculating the julia set took " << t1Diff.count() << "ms.\n";
 
     auto t2Start = high_resolution_clock::now();
-    std::vector<uint8_t> imageBitmap(imgHeight * imgWidth * bytesPerPixel);
+    std::vector<uint8_t> imageBitmap(static_cast<size_t>(imgSize.x * imgSize.y * bytesPerPixel));
     std::for_each(
         std::execution::par_unseq,
         luminanceMapData, luminanceMapData + luminanceMap.size(),
@@ -161,8 +157,8 @@ std::vector<uint8_t> getJuliaBitmapRGBA(ComplexDouble_t c, size_t imgWidth, size
             auto idx = &item - luminanceMapData;
 
             // MAGIC NUMBERS AHEAD
-            auto hsv_h = static_cast<int>(mapValue(item * 360.0, {0.0, 360.0}, {170.0, 260.0}));
-            auto hsv_v = item * 100 * 4;
+            int hsv_h = static_cast<int>(mapValue(item * 360.0, {0.0, 360.0}, {170.0, 260.0}));
+            int hsv_v = static_cast<int>(item * 100 * 4);
             if (hsv_h > 360)
                 hsv_h -= 360;
             if (hsv_v > 100)

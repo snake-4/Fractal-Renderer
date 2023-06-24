@@ -23,18 +23,10 @@ int sampleJuliaIteration(ComplexDouble_t z, ComplexDouble_t c)
     return 0;
 }
 
-std::vector<float> getJuliaLuminanceMap(ComplexDouble_t c, size_t imgWidth, size_t imgHeight,
-                                        std::pair<double, double> xRange, std::pair<double, double> yRange)
+std::vector<float> getJuliaLuminanceMap(ComplexDouble_t c, XYPairDouble_t imageSize,
+                                        XYPairDouble_t minRange, XYPairDouble_t maxRange)
 {
-    /*
-     * Because we start drawing from top left:
-     * Real part(x axis) starts from minimum.
-     * Imaginary part(y axis) starts from maximum.
-     * So we swap the y axis' minimum and maximum
-     */
-    std::swap(yRange.first, yRange.second);
-
-    std::vector<float> luminanceMap(imgHeight * imgWidth);
+    std::vector<float> luminanceMap(static_cast<size_t>(imageSize.x * imageSize.y));
     float *rawData = luminanceMap.data();
 
     std::for_each(
@@ -43,11 +35,21 @@ std::vector<float> getJuliaLuminanceMap(ComplexDouble_t c, size_t imgWidth, size
         [=](float &item)
         {
             auto idx = &item - rawData;
-            auto y = idx / imgWidth;
-            auto x = idx % imgWidth;
+            double y = idx / imageSize.y;
+            double x = idx % static_cast<int>(imageSize.x);
 
-            double realPart = mapValue(static_cast<double>(x), {0, static_cast<double>(imgWidth)}, xRange);
-            double imagPart = mapValue(static_cast<double>(y), {0, static_cast<double>(imgHeight)}, yRange);
+            /*
+             * Because we start drawing from top left:
+             * Real part(x axis) starts from minimum.
+             * Imaginary part(y axis) starts from maximum.
+             * So we swap the y axis' minimum and maximum
+             */
+            double imagPart = mapValue(static_cast<double>(y),
+                                       {0, imageSize.y}, {maxRange.y, minRange.y});
+
+            double realPart = mapValue(static_cast<double>(x),
+                                       {0, imageSize.x}, {minRange.x, maxRange.x});
+
             ComplexDouble_t z(realPart, imagPart);
 
             // These luminance values are unnormalized!
