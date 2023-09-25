@@ -3,7 +3,7 @@
     "configurePresets": [
         {
             "name": "amd64",
-            "toolchainFile": "./vcpkg/scripts/buildsystems/vcpkg.cmake",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
             "architecture": "x64",
             "binaryDir": "${sourceDir}/out/build/${presetName}",
             "installDir": "${sourceDir}/out/install/${presetName}",

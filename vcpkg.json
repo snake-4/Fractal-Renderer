@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    {
+      "name": "sfml",
+      "version>=": "2.6.0#18"
+    }
+  ],
+  "builtin-baseline": "5a38b5ec0eee3d1a1a6faab5e944617fee2697cf"
+}
