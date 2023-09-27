@@ -1,16 +1,19 @@
 {
     "version": 3,
     "configurePresets": [
-        {
-            "name": "amd64",
-            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-            "architecture": "x64",
-            "binaryDir": "${sourceDir}/out/build/${presetName}",
-            "installDir": "${sourceDir}/out/install/${presetName}",
-            "cacheVariables": {
-                "VCPKG_TARGET_TRIPLET": "x64-windows"
-            }
+      {
+        "name": "amd64",
+        "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "architecture": {
+          "value": "x64",
+          "strategy": "external"
+        },
+        "binaryDir": "${sourceDir}/out/build/${presetName}",
+        "installDir": "${sourceDir}/out/install/${presetName}",
+        "cacheVariables": {
+          "VCPKG_TARGET_TRIPLET": "x64-windows"
         }
+      }
     ],
     "buildPresets": [
         {
